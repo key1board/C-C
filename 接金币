@@ -1,0 +1,137 @@
+#include <graphics.h>
+#include <conio.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+
+#define Width 640          //画面尺寸
+#define High 480
+#define _num 5              //金币同时出现的数量
+
+int frame_left;									 //左边框架长度
+int plate_x, plate_y;							 //盘子的位置
+int Length_radius,Width_radius;			         //盘子的长和宽的半径
+
+int gold_x[_num], gold_y[_num];                    //金币的位置
+int gold_radius;								//金币的半径
+int score;                                       //分数
+                     
+void initial()													    //数据初始化
+{
+	frame_left = Width / 4 * 3;
+	plate_x = frame_left / 2;
+	Length_radius = 50;
+	Width_radius = 10;
+	plate_y = High - Width_radius;
+	gold_radius = 12;
+
+	srand((unsigned)time(NULL));
+	for (int i = 0; i < _num; i++)         //初始化金币位置
+	{
+		gold_x[i] = rand() % (Width - 9) + _num;
+		gold_y[i] = rand() % ((i + 1) * 70) + (i * _num);
+	}	
+
+	initgraph(Width, High);
+	BeginBatchDraw();
+}
+
+void show()                                                        //显示画面
+{
+	TCHAR str[] = _T("score:");
+
+	setlinestyle(PS_SOLID, 1);                              //画盘子
+	setfillcolor(RGB(156, 156, 156));
+	fillellipse(plate_x - Length_radius, plate_y - Width_radius 
+		, plate_x + Length_radius, plate_y + Width_radius);
+
+	for (int i = 0; i < _num; i++)						//打印金币
+	{                           
+		setlinecolor(RGB(255, 255, 0));
+		setfillcolor(RGB(255, 215, 0));
+		fillcircle(gold_x[i], gold_y[i], gold_radius);
+	}
+	
+	for (int i = 0; i < 6; i++)
+	{
+		settextcolor(WHITE);
+		outtextxy((Width - 40) * (i + 7), High - 30, str[i]);
+	}
+	FlushBatchDraw();
+}
+
+void DataControl()                                                    //数据控制
+{
+	int i;                      
+		
+	for (i = 0; i < _num; i++)
+	{
+		gold_y[i] = gold_y[i] + 5;					//每次向下掉落5个像素
+
+		if ((gold_x[i] >= plate_x - Length_radius) && (gold_x[i] <= plate_x + Length_radius)
+			&& (gold_y[i] >= plate_y && gold_y[i] <= plate_y + Width_radius) || gold_y[i] >= High)
+		{										    //当金币飞出画面
+			gold_x[i] = rand() % (Width - 9) + _num;
+			gold_y[i] = rand() % ((i + 1) * 10) + _num;
+			score++;
+		}
+	}
+	Sleep(50);
+}
+
+void ExternalInput()                                                    //输入
+{
+	char input;
+	
+	if (_kbhit())
+	{
+		input = _getch();
+		switch (input)
+		{
+		case 'w':
+		{
+			if ((plate_y - Width_radius) > 0)
+				plate_y = plate_y - 20; break;
+		}
+		case 's':
+		{
+			if ((plate_y + Width_radius) < High)
+				plate_y = plate_y + 20; break;
+		}
+		case 'a':
+		{
+			if ((plate_x - Length_radius) > 0)
+				plate_x = plate_x - 20; break;
+		}
+		case 'd':
+		{
+			if ((plate_x + Length_radius) < Width)
+				plate_x = plate_x + 20; break;
+		}
+		}
+	}
+}
+
+int main()
+{
+	char ch;
+	//ch = _getch();
+
+	initial();
+	while (true)
+	{
+		DataControl();
+		show();
+		ExternalInput();
+		cleardevice();							//清除残影
+		/*if (_kbhit())
+		{
+			ch = _getch();
+			if (ch == ' ')
+				break;
+		}*/
+
+	}
+	//_getch();
+	closegraph();
+}
