@@ -1,0 +1,155 @@
+#define _CRT_SECURE_NO_WARNINGS
+
+#include <graphics.h>
+#include <conio.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <mmsystem.h>
+#include <time.h>
+#pragma comment (lib,"winmm.lib")				//引用Windows Multimedia api
+
+#define Width 540                      //画面尺寸
+#define High 360
+#define NUMBER 3                    //障碍物的数量
+
+IMAGE img_bk, img_bd, img_bd1, img_bar_up1, img_bar_up2, img_bar_down1, img_bar_down2, img_star,img_gg;
+int bird_x, bird_y;                                    //小鸟的位置
+int pillar_x[NUMBER], pillar_up[NUMBER], pillar_down[NUMBER];                    //障碍物的位置
+int speed;
+int score;									//得分
+
+void startup()															//数据初始化
+{
+	initgraph(Width, High);
+
+	loadimage(&img_star, _T("E:\\flappybird\\start.jpg"));
+	putimage(0, 0, &img_star);
+	Sleep(2000);
+
+	loadimage(&img_bk, _T("E:\\flappybird\\background.jpg"));      //读取背景到IMAGE中
+	loadimage(&img_bd, _T("E:\\flappybird\\bird.jpg"));          //导入遮罩图
+	loadimage(&img_bd1, _T("E:\\flappybird\\bird1.jpg"));        //导入鸟
+	loadimage(&img_bar_up1, _T("E:\\flappybird\\bar_up1.jpg"));
+	loadimage(&img_bar_up2, _T("E:\\flappybird\\bar_up2.jpg"));
+	loadimage(&img_bar_down1, _T("E:\\flappybird\\bar_down1.jpg"));
+	loadimage(&img_bar_down2, _T("E:\\flappybird\\bar_down2.jpg"));
+	
+	bird_x = 50;
+	bird_y = High / 2;
+	speed = 0;
+	score = 0;
+
+	srand((unsigned)time(NULL));
+	for (int i = 0; i < NUMBER; i++)    //对障碍物的位置初始化
+	{
+		pillar_x[i] = (Width / 2) + i * 150;
+		pillar_up[i] = rand() % 260;
+		pillar_down[i] = pillar_up[i] + 100;
+	}
+
+	BeginBatchDraw();
+	//mciSendString(TEXT("open E:\\flappybird\\background.mp3 alias bkmusic"), NULL, 0, NULL);        //打开背景音乐
+	//mciSendString(TEXT("play bkmusic repeat"), NULL, 0, NULL);    //循环播放
+}
+void show()																	//显示画面
+{
+	TCHAR str[NUMBER];
+
+	speed = speed + 5;							//背景移动速度
+	putimage(-speed,0, &img_bk);              //显示背景
+	
+	for (int i = 0; i < NUMBER; i++)
+	{
+		putimage(pillar_x[i], 0, 60, High, &img_bar_up1, 2, High - pillar_up[i], NOTSRCERASE);    //显示上面的障碍物
+		putimage(pillar_x[i], 0, 60, High, &img_bar_up2, 2, High - pillar_up[i], SRCINVERT);
+		putimage(pillar_x[i], pillar_down[i], 60, High, &img_bar_down1, 2, 0, NOTSRCERASE);    //显示下面的障碍物
+		putimage(pillar_x[i], pillar_down[i], 60, High, &img_bar_down2, 2, 0, SRCINVERT);
+	}
+	putimage(bird_x, bird_y, &img_bd, NOTSRCERASE);        //显示小鸟
+	putimage(bird_x, bird_y, &img_bd1, SRCINVERT);
+
+		LOGFONT f;
+		gettextstyle(&f);                     // 获取当前字体设置
+		f.lfHeight = 48;
+		f.lfWidth = 35;
+		_tcscpy(f.lfFaceName, _T("黑体"));
+		f.lfQuality = ANTIALIASED_QUALITY;    // 设置输出效果为抗锯齿  
+		settextstyle(&f);
+
+		setbkmode(TRANSPARENT);
+		_stprintf(str, _T("%d"), score);
+		for (int i = 0; i < 2; i++)    
+			outtextxy(Width / 2  + (i * 6), 0, str[i]);
+
+	FlushBatchDraw();
+	Sleep(50);
+}
+void DateControl()                                                              //数据控制
+{
+	int i;
+	
+	if (speed > 99)          //移动画面
+		speed = 0;
+	if (bird_y < High)        //小鸟的下降
+		bird_y = bird_y + 5;
+
+	for (i = 0; i < NUMBER; i++)
+	{
+		if (pillar_x[i] >= 0)		//移动障碍物
+			pillar_x[i] = pillar_x[i] - 3;
+
+		if (pillar_x[i] <= bird_x - 34)     //随机生成障碍物
+		{
+			pillar_x[i] = Width;
+			pillar_up[i] = rand() % 260;
+			pillar_down[i] = pillar_up[i] + 100;
+		}
+		if (bird_x + 30 >= pillar_x[i] && bird_x <= pillar_x[i] + 60)     //游戏结束
+		{
+			if ((bird_y + 20 >= pillar_down[i] || bird_y <= pillar_up[i]) || (bird_y >= 360))
+			{
+				loadimage(&img_gg, _T("E:\\flappybird\\gameover.jpg"));
+				putimage(100, 100, &img_gg);
+
+				//mciSendString(TEXT("close jpmusic"), NULL, 0, NULL);
+				mciSendString(TEXT("open E:\\flappybird\\Gameover.mp3 alias jpmusic"), NULL, 0, NULL); //打开音乐
+				mciSendString(TEXT("play jpmusic"), NULL, 0, NULL);
+				Sleep(3000);
+				exit(0);
+			}
+		}
+		if (bird_x + 34 > pillar_x[i] + 60 && bird_x + 34 < pillar_x[++i])         //得分
+		{
+			score++;
+			//mciSendString(TEXT("close jpmusic"), NULL, 0, NULL);
+			mciSendString(TEXT("open E:\\flappybird\\score.mp3 alias jpmusic"), NULL, 0, NULL); //打开音乐
+			mciSendString(TEXT("play jpmusic"), NULL, 0, NULL);
+		}
+	}
+}
+void input()																//外部输入
+{
+	char input;
+	if (_kbhit())
+	{
+		input = _getch();
+		if (input == ' ' && bird_y > 20)
+		{
+			bird_y = bird_y - 50;
+			//mciSendString(TEXT("close jpmusic"), NULL, 0, NULL);       //先把前面一次的音乐关闭
+			//mciSendString(TEXT("open E:\\flappybird\\Jump.mp3 alias jpmusic"), NULL, 0, NULL); //打开音乐
+			//mciSendString(TEXT("play jpmusic"), NULL, 0, NULL);
+		}
+	}
+}
+
+void main()
+{
+	startup();
+	while (true)
+	{
+		show();
+		DateControl();
+		input();
+	}
+}
