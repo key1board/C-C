@@ -3,13 +3,7 @@
 #include <conio.h>
 #include <string.h>
 
-
-
-
 #define MAXIMUS 15 //定义棋盘大小
-
-
-
 
 int p[MAXIMUS][MAXIMUS];//存储对局信息
 char buff[MAXIMUS * 2 + 1][MAXIMUS * 4 + 3];//输出缓冲器
@@ -18,9 +12,6 @@ int Now;//当前走子的玩家，1代表黑，2代表白
 int wl, wp;//当前写入缓冲器的列数和行数位置
 char* showText;//在棋盘中央显示的文字信息
 int count;//回合数
-
-
-
 
 char* Copy(char* strDest, const char* strSrc)//修改过的字符串复制函数，会忽略末端的\0
 {
